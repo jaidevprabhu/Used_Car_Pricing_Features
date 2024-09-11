@@ -142,7 +142,19 @@ We notice that many car models are named with slight variations - it's difficult
     * Visualize relationships using scatter plots or pair plots.
     * Explore potential multicollinearity issues (high correlation between features)
 
- 
+
+### Distribution of numerical variables - `odometer` and `year` (Model Year)
+
+<center>
+    <img src = images/numeric_hist.png width = 100% / >
+</center>
+
+### Histogram of the target variable Price
+
+<center>
+    <img src = images/price_distribution.png width = 100% / >
+</center>
+
 
 
 
@@ -150,8 +162,13 @@ We notice that many car models are named with slight variations - it's difficult
     * Explore the distributions of key variables (e.g., price, mileage, age) to understand their central tendency and spread.
     * Analyze the relationship between key predictor variables (e.g., mileage, Model Year) and the target variable (price).
 
+Univariate Analysis chart is presented here. 
 
+<center>
+    <img src = images/univariate_analysis.png width = 100% / >
+</center>
 
+The Bivariate chart is available in the Notebook. 
 
 ### Data Preparation
 
@@ -159,6 +176,7 @@ After our initial exploration and fine tuning of the business understanding, it 
 
 **Data Cleaning and Preparation**
 
+The cleaned data was used in the univariate and bivariate analysis. 
 
 
 
@@ -166,16 +184,122 @@ After our initial exploration and fine tuning of the business understanding, it 
 
 With our final dataset in hand, it is now time to build some models.  Here, you should build a number of different regression models with the price as the target.  In building your models, you should explore different parameters and be sure to cross-validate your findings.
 
+**Create training set**
+For Vehicle characteristics we will analyze it in an non-regional manner, so we drop state and region from X
+Also the target variable price is dropped.
 
+```
+X = df_cleaned.drop(['state', 'region', 'price'], axis = 1)
+
+y = df_cleaned['price']
+```
+
+We create a machine learning pipeline with three stages
+
+1. Scaling numerical columns,
+2. Encode categorical columns,
+3. Create a Column Transformer stage that will be used by the pipeline
+4. Fit a Ridge regression model
+
+```
+numerical_transformer = StandardScaler()
+# Create encoders
+ordinal_transformer = OrdinalEncoder()
+non_ordinal_transformer = OneHotEncoder(handle_unknown='ignore')
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', numerical_transformer, numerical_features),
+        ('ord', ordinal_transformer, ordinal_features),
+        ('non_ord', non_ordinal_transformer, non_ordinal_features),
+    ],
+    remainder='drop'  # Drop any remaining columns not specified
+)
+
+# Create the full pipeline
+pipeline = Pipeline(steps=[
+    ('preprocessor', preprocessor),
+    ('regressor', Ridge())
+])
+```
+
+
+For CrossValidation and to tune for hyperparameters we perform a `GridSearchCV`.
+
+```
+# Define the parameter grid for Ridge regression
+param_grid = {
+    # Create 15 exponentially spaced samples from 0.01 to 100
+    'regressor__alpha': np.logspace(np.log10(0.01), np.log10(100), num=15), 
+}
+
+# Set up GridSearchCV
+grid_search = GridSearchCV(
+    pipeline, 
+    param_grid, 
+    cv=5, 
+    scoring='neg_mean_squared_error', 
+    verbose = 4, 
+    n_jobs=-1,
+)
+```
 
 
 ### Evaluation
 
 With some modeling accomplished, we aim to reflect on what we identify as a high quality model and what we are able to learn from this.  We should review our business objective and explore how well we can provide meaningful insight on drivers of used car prices.  Your goal now is to distill your findings and determine whether the earlier phases need revisitation and adjustment or if you have information of value to bring back to your client.
 
+```
+# Fit the model using the best parameters found
+best_model = grid_search.best_estimator_
+
+importances = best_model.named_steps['regressor'].coef_  
+
+# Get the feature names after encoding
+encoder = best_model.named_steps['preprocessor']  
+encoded_feature_names = encoder.get_feature_names_out()  # Get new feature names after encoding
+
+# Ensure the lengths match
+if len(importances) == len(encoded_feature_names):
+    feature_importance_df = pd.DataFrame({
+        'Feature': encoded_feature_names,
+        'Importance': importances
+    })
+```
+
+## Features positively impacting the price
+
+- Diesel powered vehicles are highly desired.
+- Late model years vehicles positively impact the price.
+- Car Makes - Lexus, Toyota, Audi and Mercedes-Benz positively drive the price point.
+- Having a clean title is very desireable.
+- Trucks and 8-Cylinder vehicles also drive the pricing.
+
+## Features negatively impacting the price
+
+- Hatchback models are not desired.
+- A high odometer reading / high mileage vehicles bring down prices.
+- Hybrid powered vehicles do not command good prices in Used Car markets.
+- Car Makes - Chrysler, Nissan, Hyundai, Volkswagen and Kia drive down the price point.
+
+<center>
+    <img src = images/Prediction_Errors.png width = 100% / >
+</center>
+
+#### Model Pricing prediction
+
+The plot for predicted values v/s actual price shows a good correlation between the values of 5K to 35K - with more variations at either end of the target variables - i.e. prices less than 5,000 and 35,000
+
 
 ### Deployment
 
 Now that we've settled on our models and findings, it is time to deliver the information to the client.  You should organize your work as a basic report that details your primary findings.  Keep in mind that your audience is a group of used car dealers interested in fine tuning their inventory.
 
+We submit the features predicted to be important from the analysis above to the customer in the Customer Report. 
 
+### Future Work, Improvements
+
+1. We noticed that the data was incomplete in lots of columns and had significant shortcomings, including duplciations.
+2. The column names used were non-standard from the industry practice as used in VIN numbers database available from National Highway Safety Administration.
+3. We have included a snippet of code that can get the data effectively from `nhsa.gov` site easily and fill in the values - but it was skipped in this project due to lack of time.
+4. In addition to the regression models we have learnt to-date, we have presented the code for `RandomForestRegressor` - which is more accurate - but had similar findings on the features. Since it's to be explored later we have kept the code but did into fully study it for now.  
