@@ -142,7 +142,19 @@ We notice that many car models are named with slight variations - it's difficult
     * Visualize relationships using scatter plots or pair plots.
     * Explore potential multicollinearity issues (high correlation between features)
 
- 
+
+### Distribution of numerical variables - `odometer` and `year` (Model Year)
+
+<center>
+    <img src = images/numeric_hist.png width = 100% / >
+</center>
+
+### Histogram of the target variable Price
+
+<center>
+    <img src = images/price_distribution.png width = 100% / >
+</center>
+
 
 
 
@@ -150,8 +162,13 @@ We notice that many car models are named with slight variations - it's difficult
     * Explore the distributions of key variables (e.g., price, mileage, age) to understand their central tendency and spread.
     * Analyze the relationship between key predictor variables (e.g., mileage, Model Year) and the target variable (price).
 
+Univariate Analysis chart is presented here. 
 
+<center>
+    <img src = images/univariate_analysis.png width = 100% / >
+</center>
 
+The Bivariate chart is available in the Notebook. 
 
 ### Data Preparation
 
@@ -159,6 +176,7 @@ After our initial exploration and fine tuning of the business understanding, it 
 
 **Data Cleaning and Preparation**
 
+The cleaned data was used in the univariate and bivariate analysis. 
 
 
 
@@ -166,7 +184,65 @@ After our initial exploration and fine tuning of the business understanding, it 
 
 With our final dataset in hand, it is now time to build some models.  Here, you should build a number of different regression models with the price as the target.  In building your models, you should explore different parameters and be sure to cross-validate your findings.
 
+**Create training set**
+For Vehicle characteristics we will analyze it in an non-regional manner, so we drop state and region from X
+Also the target variable price is dropped.
 
+```
+X = df_cleaned.drop(['state', 'region', 'price'], axis = 1)
+
+y = df_cleaned['price']
+```
+
+We create a machine learning pipeline with three stages
+
+1. Scaling numerical columns,
+2. Encode categorical columns,
+3. Create a Column Transformer stage that will be used by the pipeline
+4. Fit a Ridge regression model
+
+```
+numerical_transformer = StandardScaler()
+# Create encoders
+ordinal_transformer = OrdinalEncoder()
+non_ordinal_transformer = OneHotEncoder(handle_unknown='ignore')
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', numerical_transformer, numerical_features),
+        ('ord', ordinal_transformer, ordinal_features),
+        ('non_ord', non_ordinal_transformer, non_ordinal_features),
+    ],
+    remainder='drop'  # Drop any remaining columns not specified
+)
+
+# Create the full pipeline
+pipeline = Pipeline(steps=[
+    ('preprocessor', preprocessor),
+    ('regressor', Ridge())
+])
+```
+
+
+For CrossValidation and to tune for hyperparameters we perform a `GridSearchCV`.
+
+```
+# Define the parameter grid for Ridge regression
+param_grid = {
+    # Create 15 exponentially spaced samples from 0.01 to 100
+    'regressor__alpha': np.logspace(np.log10(0.01), np.log10(100), num=15), 
+}
+
+# Set up GridSearchCV
+grid_search = GridSearchCV(
+    pipeline, 
+    param_grid, 
+    cv=5, 
+    scoring='neg_mean_squared_error', 
+    verbose = 4, 
+    n_jobs=-1,
+)
+```
 
 
 ### Evaluation
