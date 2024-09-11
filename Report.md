@@ -26,16 +26,6 @@ The **Manheim Index** is increasingly recognized by both financial and economic 
 
 [Manheim](https://site.manheim.com/en/services/consulting/used-vehicle-value-index.html)
 
-
-```python
-
-```
-
-
-```python
-
-```
-
 ### Data Understanding
 
 After considering the business understanding, we want to get familiar with our data.  The following steps will get us to know the dataset and identify any quality issues within.  
@@ -54,44 +44,114 @@ df.info()
 ```
 
 <center>
-    <img src = images/initial_data_info.png width = 50% / >
+    <img src = images/initial_data_info.png width = 100% / >
 </center>
 
 
-```python
-
-```
-
-
-```python
-
-```
-
 **Data Exploration and Quality Assessment**
+
+The following plan will be followed for this phase. 
 
 * **Missing values:**
     * `df.isnull().sum()` - Check for missing values in each column.
     * Visualize missing data patterns using heatmaps or bar charts.
     * Consider strategies for handling missing data (e.g., imputation, deletion).
+ 
+We notice that there are null values in several columns. For those columns such as `price` , `year` and `odometer` - that have NULL/NaN or 0 values are unusable thus entire row is dropped.
+
+The values of `odometer` and `year` (Model Year) are converted to integer from float for easier representation. 
+The following features are coverted from `object` to `category`
+
+```
+categorical_cols = ['manufacturer', 'condition', 'cylinders', 'fuel', 
+                    'title_status', 'transmission', 'drive', 
+                    'size', 'type', 'paint_color']
+```
+
+### Motivation
+
+**Memory Efficiency**: Categorical types use less memory compared to object types, especially when there are many repeated string values. This can be significant in large datasets.
+
+**Performance Improvement**: Operations on categorical data can be faster than on object data. For example, filtering, grouping, and aggregating can be more efficient.
+
+**Machine Learning Algorithms**: Many ML algorithms can benefit from categorical data. Categorical variables can be encoded using techniques like one-hot encoding or label encoding, which can improve the performance of algorithms that require numerical input.
+
+**Data Integrity**: By converting to categorical, we can ensure that only the defined categories are used, which can help prevent errors in data entry or processing.
+
+**Null or Invalid category names handling**
+Any category improperly filled will be filled as `UNKNOWN` or `other` based on existing data entry for the column
+
 * **Outliers:**
     * Visualize distributions using histograms or box plots to identify potential outliers.
     * Investigate outliers: Are they errors or legitimate extreme values?
     * Decide on appropriate handling (e.g., removal, transformation).
+
+ We use the IQR method to remove outliers for the numerical columns. 
+ We use a threshold method to remove low propensity category values for categorical columns.
+
+**Ordered Category**
+The `condition` column has categories that can be ordered from least desireable (UNKNOWN and salvage) to most desireable ( like new and new ).
+```
+ordered_conditions_values = ['UNKNOWN', 'salvage', 'fair', 'good', 'excellent', 'like new', 'new']
+```
+
+
 * **Data types and consistency:**
     * Ensure data types are appropriate for each column.
     * Check for inconsistencies within categorical variables (e.g., different spellings for the same category).
+ 
+**Duplicate vehicles in different locations**
+We notice that the same vehicle is listed in different locations at the same time, to avoid this skewing the model, we decide to drop these duplicate entries
+```
+# Drop rows that have the same values for 'odometer' and 'VIN'
+# This will keep only the first occurrence of each unique combination of 'odometer' and 'VIN'
+df = df.drop_duplicates(subset=['odometer', 'VIN'], keep='first')
+```
+
+**Drop VIN and ID**
+These are for identification only - do not add value to modelling
+
+```
+# Get unique names from the model column
+unique_model_values = pd.Series(df['model'].unique()).dropna().tolist()  # This creates a list of unique values
+
+# Let's check the number of unique model names 
+print(len(unique_model_values))
+20036
+```
+
+**Drop column `model` - too many variants**
+We notice that many car models are named with slight variations - it's difficult to meaningfully to group them in any discernable manner in a short timeframe without any deep knowledge into Automobile subject matter. We thus decide that Manufacturer name and Year should constitutue adequate uniqueness.
+
+
+### Review Cleaned Data
+
+<center>
+    <img src = images/cleaned_data_info.png width = 100% / >
+</center>
+
+### Cleaned Data Summary
+
+<center>
+    <img src = images/cleaned_data_summary.png width = 100% / >
+</center>
+
+
 * **Relationships between variables:**
     * Calculate correlations between numerical variables.
     * Visualize relationships using scatter plots or pair plots.
     * Explore potential multicollinearity issues (high correlation between features)
+
+ 
+
+
+
 * **Univariate and Bivariate Analysis:**
     * Explore the distributions of key variables (e.g., price, mileage, age) to understand their central tendency and spread.
     * Analyze the relationship between key predictor variables (e.g., mileage, Model Year) and the target variable (price).
 
 
-```python
 
-```
 
 ### Data Preparation
 
@@ -99,129 +159,23 @@ After our initial exploration and fine tuning of the business understanding, it 
 
 **Data Cleaning and Preparation**
 
-* **Address missing values:**
-    * Impute missing values using appropriate techniques (e.g., mean, median, mode, regression imputation).
-    * Drop rows or columns with excessive missing values as necessary.
-* **Handle outliers:**
-    * Remove or transform outliers based on domain knowledge and analysis.
-* **Correct data types:**
-    * Convert columns to appropriate data types if needed.
-* **Standardize categorical variables:**
-    * Ensure consistent representation of categoriees (e.g., age of the car, interaction terms).
 
 
-```python
-
-```
-
-
-```python
-
-```
-
-
-```python
-
-```
-
-
-```python
-
-```
 
 ### Modeling
 
 With our final dataset in hand, it is now time to build some models.  Here, you should build a number of different regression models with the price as the target.  In building your models, you should explore different parameters and be sure to cross-validate your findings.
 
 
-```python
 
-```
-
-
-```python
-
-```
-
-
-```python
-
-```
-
-
-```python
-
-```
 
 ### Evaluation
 
 With some modeling accomplished, we aim to reflect on what we identify as a high quality model and what we are able to learn from this.  We should review our business objective and explore how well we can provide meaningful insight on drivers of used car prices.  Your goal now is to distill your findings and determine whether the earlier phases need revisitation and adjustment or if you have information of value to bring back to your client.
 
 
-```python
-
-```
-
-
-```python
-
-```
-
-
-```python
-
-```
-
-
-```python
-
-```
-
-
-```python
-
-```
-
-
-```python
-
-```
-
 ### Deployment
 
 Now that we've settled on our models and findings, it is time to deliver the information to the client.  You should organize your work as a basic report that details your primary findings.  Keep in mind that your audience is a group of used car dealers interested in fine tuning their inventory.
 
 
-```python
-
-```
-
-
-```python
-
-```
-
-
-```python
-
-```
-
-
-```python
-
-```
-
-
-```python
-
-```
-
-
-```python
-
-```
-
-
-```python
-
-```
