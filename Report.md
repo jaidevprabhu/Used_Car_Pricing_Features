@@ -256,7 +256,7 @@ best_model = grid_search.best_estimator_
 importances = best_model.named_steps['regressor'].coef_  
 
 # Get the feature names after encoding
-encoder = best_model.named_steps['preprocessor']  # Replace 'encoder' with the actual name of your encoder step
+encoder = best_model.named_steps['preprocessor']  
 encoded_feature_names = encoder.get_feature_names_out()  # Get new feature names after encoding
 
 # Ensure the lengths match
@@ -273,12 +273,12 @@ if len(importances) == len(encoded_feature_names):
 - Late model years vehicles positively impact the price.
 - Car Makes - Lexus, Toyota, Audi and Mercedes-Benz positively drive the price point.
 - Having a clean title is very desireable.
-- Trucks and 8-Cylinder vehicles also drive the pricing
+- Trucks and 8-Cylinder vehicles also drive the pricing.
 
 ## Features negatively impacting the price
 
 - Hatchback models are not desired.
-- A high odometer reading / high mileage vehicles bring down prices
+- A high odometer reading / high mileage vehicles bring down prices.
 - Hybrid powered vehicles do not command good prices in Used Car markets.
 - Car Makes - Chrysler, Nissan, Hyundai, Volkswagen and Kia drive down the price point.
 
@@ -295,6 +295,11 @@ The plot for predicted values v/s actual price shows a good correlation between 
 
 Now that we've settled on our models and findings, it is time to deliver the information to the client.  You should organize your work as a basic report that details your primary findings.  Keep in mind that your audience is a group of used car dealers interested in fine tuning their inventory.
 
-We submit the features rpedicted to be important from the analysis above to the customer in the Customer Report. 
+We submit the features predicted to be important from the analysis above to the customer in the Customer Report. 
 
+### Future Work, Improvements
 
+1. We noticed that the data was incomplete in lots of columns and had significant shortcomings, including duplciations.
+2. The column names used were non-standard from the industry practice as used in VIN numbers database available from National Highway Safety Administration.
+3. We have included a snippet of code that can get the data effectively from `nhsa.gov` site easily and fill in the values - but it was skipped in this project due to lack of time.
+4. In addition to the regression models we have learnt to-date, we have presented the code for `RandomForestRegressor` - which is more accurate - but had similar findings on the features. Since it's to be explored later we have kept the code but did into fully study it for now.  
