@@ -249,9 +249,52 @@ grid_search = GridSearchCV(
 
 With some modeling accomplished, we aim to reflect on what we identify as a high quality model and what we are able to learn from this.  We should review our business objective and explore how well we can provide meaningful insight on drivers of used car prices.  Your goal now is to distill your findings and determine whether the earlier phases need revisitation and adjustment or if you have information of value to bring back to your client.
 
+```
+# Fit the model using the best parameters found
+best_model = grid_search.best_estimator_
+
+importances = best_model.named_steps['regressor'].coef_  
+
+# Get the feature names after encoding
+encoder = best_model.named_steps['preprocessor']  # Replace 'encoder' with the actual name of your encoder step
+encoded_feature_names = encoder.get_feature_names_out()  # Get new feature names after encoding
+
+# Ensure the lengths match
+if len(importances) == len(encoded_feature_names):
+    feature_importance_df = pd.DataFrame({
+        'Feature': encoded_feature_names,
+        'Importance': importances
+    })
+```
+
+## Features positively impacting the price
+
+- Diesel powered vehicles are highly desired.
+- Late model years vehicles positively impact the price.
+- Car Makes - Lexus, Toyota, Audi and Mercedes-Benz positively drive the price point.
+- Having a clean title is very desireable.
+- Trucks and 8-Cylinder vehicles also drive the pricing
+
+## Features negatively impacting the price
+
+- Hatchback models are not desired.
+- A high odometer reading / high mileage vehicles bring down prices
+- Hybrid powered vehicles do not command good prices in Used Car markets.
+- Car Makes - Chrysler, Nissan, Hyundai, Volkswagen and Kia drive down the price point.
+
+<center>
+    <img src = images/Prediction_Errors.png width = 100% / >
+</center>
+
+#### Model Pricing prediction
+
+The plot for predicted values v/s actual price shows a good correlation between the values of 5K to 35K - with more variations at either end of the target variables - i.e. prices less than 5,000 and 35,000
+
 
 ### Deployment
 
 Now that we've settled on our models and findings, it is time to deliver the information to the client.  You should organize your work as a basic report that details your primary findings.  Keep in mind that your audience is a group of used car dealers interested in fine tuning their inventory.
+
+We submit the features rpedicted to be important from the analysis above to the customer in the Customer Report. 
 
 
